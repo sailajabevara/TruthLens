@@ -34,32 +34,22 @@ class TrustShieldProvider extends ChangeNotifier {
   }
 
   /// Main analysis entry point.
-  /// Uses Claude for internship/job content, local engine for URL/news/message.
+  /// Always uses the AI service for all content types (URL, Message, News, Document, Images).
   Future<ScanRecord> analyzeInput({
     required ScanType scanType,
     required String content,
-    bool forceClaudeForInternship = true,
   }) async {
     _isBusy = true;
     notifyListeners();
 
     try {
-      // ── Detect if content looks like an internship/job offer ──
-      final isInternshipContent = _looksLikeInternship(content);
-
-      ScanRecord record;
-
-      if (forceClaudeForInternship && isInternshipContent) {
-        record = await _analyzeWithClaude(content, scanType);
-      } else {
-        record = await _analyzeLocally(content, scanType);
-      }
-
+      final record = await _analyzeWithAI(content, scanType);
+      
       _history.insert(0, record);
       _lastResult = record;
       return record;
     } catch (e) {
-      // Fallback to local engine if Claude fails
+      // Fallback to local engine ONLY if AI fails completely (e.g., no internet)
       final record = await _analyzeLocally(content, scanType);
       _history.insert(0, record);
       _lastResult = record;
@@ -70,13 +60,14 @@ class TrustShieldProvider extends ChangeNotifier {
     }
   }
 
-  /// Claude-powered analysis for internship/job offers
-  Future<ScanRecord> _analyzeWithClaude(
+  /// AI-powered analysis for all scan types
+  Future<ScanRecord> _analyzeWithAI(
     String content,
     ScanType scanType,
   ) async {
-    final result = await _claudeService.analyzeInternship(
+    final result = await _claudeService.analyzeContent(
       content: content,
+      scanType: scanType,
       language: _language == AppLanguage.telugu ? 'telugu' : 'english',
     );
 
@@ -92,7 +83,7 @@ class TrustShieldProvider extends ChangeNotifier {
     );
   }
 
-  /// Local rule-based analysis (existing FraudAiEngine)
+  /// Local rule-based analysis (existing FraudAiEngine) as a fallback
   Future<ScanRecord> _analyzeLocally(
     String content,
     ScanType scanType,
@@ -111,7 +102,7 @@ class TrustShieldProvider extends ChangeNotifier {
     );
   }
 
-  /// Send a chat message — uses Claude API for smarter replies
+  /// Send a chat message — uses AI API for smarter replies
   Future<String> sendChatMessage(String userMessage) async {
     _chatHistory.add({'role': 'user', 'content': userMessage});
     notifyListeners();
@@ -142,19 +133,6 @@ class TrustShieldProvider extends ChangeNotifier {
   void addUserChatMessage(String userText) {
     _chatHistory.add({'role': 'user', 'content': userText});
     notifyListeners();
-  }
-
-  /// Heuristic: does the content look like a job/internship post?
-  bool _looksLikeInternship(String content) {
-    final lower = content.toLowerCase();
-    final internshipKeywords = [
-      'internship', 'intern', 'hiring', 'job opening', 'job offer',
-      'apply now', 'stipend', 'salary', 'work from home', 'wfh',
-      'remote job', 'fresher', 'vacancy', 'recruiter', 'joining',
-      'ctc', 'lpa', 'package', 'company', 'position', 'role',
-    ];
-    final matchCount = internshipKeywords.where(lower.contains).length;
-    return matchCount >= 2;
   }
 
   void updateThemeMode(ThemeMode mode) {

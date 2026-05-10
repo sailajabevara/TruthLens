@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:device_preview/device_preview.dart';
 import 'package:provider/provider.dart';
 import 'package:task_slider/firebase_options.dart';
 import 'package:task_slider/providers/truthlens_provider.dart';
@@ -8,15 +7,16 @@ import 'package:task_slider/screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  runApp(
-    DevicePreview(
-      enabled: !const bool.fromEnvironment('dart.vm.product'),
-      builder: (context) => const TrustShieldCore(),
-    ),
-  );
+  
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
+  }
+
+  runApp(const TrustShieldCore());
 }
 
 class TrustShieldCore extends StatelessWidget {
@@ -50,8 +50,6 @@ class TrustShieldApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      locale: DevicePreview.locale(context),
-      builder: DevicePreview.appBuilder,
       title: 'TruthLens AI',
       themeMode: appProvider.themeMode,
       theme: ThemeData(
