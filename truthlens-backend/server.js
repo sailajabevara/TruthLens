@@ -1,39 +1,56 @@
 const express = require("express");
 const cors = require("cors");
+const axios = require("axios");
 require("dotenv").config();
-
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 app.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-002",
-    });
-
-    const result = await model.generateContent(
-      `You are TruthLens AI. Detect scams and fake jobs.\nUser message: ${message}`
+    const response = await axios.post(
+      OPENROUTER_URL,
+      {
+        model: "google/gemini-2.0-flash-001",
+        messages: [
+          {
+            role: "system",
+            content: "You are TruthLens AI. Detect scams and fake jobs. Be concise."
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ]
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://truthlens.app", // Optional, for OpenRouter rankings
+          "X-Title": "TruthLens AI" // Optional
+        }
+      }
     );
 
-    const response = result.response.text();
+    const reply = response.data.choices[0].message.content;
 
     res.json({
-      reply: response,
+      reply: reply,
     });
 
   } catch (error) {
-    console.log(error);
+    console.error("OpenRouter Error:", error.response ? error.response.data : error.message);
 
     res.status(500).json({
-      error: "Something went wrong",
+      error: "Something went wrong with the AI service",
     });
   }
 });

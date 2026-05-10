@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:task_slider/models/scam_report.dart';
 import 'package:task_slider/providers/truthlens_provider.dart';
 import 'package:task_slider/services/risk_analyzer.dart';
-import '../services/chat_service.dart';
 
 const Color _kCard = Color(0xFF171B3A);
 const Color _kAccent2 = Color(0xFF3D8BFF);
@@ -40,18 +39,12 @@ class _AiChatAssistantScreenState extends State<AiChatAssistantScreen> {
 
     final provider = context.read<TrustShieldProvider>();
     
-    // Add user message to chat history
-    provider.addUserChatMessage(text);
-
     try {
-      // Get reply from backend chat service
-      final reply = await ChatService.sendMessage(text);
-      if (!mounted) return;
-      
-      // Add assistant reply to chat history
-      provider.addAssistantChatMessage(reply);
+      // Use the provider's sendChatMessage which uses the updated OpenRouter service
+      await provider.sendChatMessage(text);
     } catch (_) {
       if (!mounted) return;
+      // Local fallback in case of catastrophic failure
       final reply = _generateAiReply(text);
       provider.addAssistantChatMessage(reply);
     }
