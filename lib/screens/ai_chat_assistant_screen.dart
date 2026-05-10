@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:task_slider/models/scam_report.dart';
 import 'package:task_slider/providers/truthlens_provider.dart';
 import 'package:task_slider/services/risk_analyzer.dart';
+import '../services/chat_service.dart';
 
 const Color _kCard = Color(0xFF171B3A);
 const Color _kAccent2 = Color(0xFF3D8BFF);
@@ -18,9 +19,6 @@ class _AiChatAssistantScreenState extends State<AiChatAssistantScreen> {
   final TextEditingController _chatController = TextEditingController();
   final FraudAiEngine _fraudAiEngine = FraudAiEngine();
   final ScrollController _scrollController = ScrollController();
-  final List<({bool isUser, String text})> _messages = [
-    (isUser: false, text: 'Hi, I am TruthLens AI assistant. Ask me about scams.'),
-  ];
   bool _isBotTyping = false;
 
   @override
@@ -35,28 +33,33 @@ class _AiChatAssistantScreenState extends State<AiChatAssistantScreen> {
     if (text.isEmpty) return;
 
     setState(() {
-      _messages.add((isUser: true, text: text));
       _chatController.clear();
       _isBotTyping = true;
     });
     _scrollToBottom();
 
+    final provider = context.read<TrustShieldProvider>();
+    
+    // Add user message to chat history
+    provider.addUserChatMessage(text);
+
     try {
-      final provider = context.read<TrustShieldProvider>();
-      final reply = await provider.sendChatMessage(text);
+      // Get reply from backend chat service
+      final reply = await ChatService.sendMessage(text);
       if (!mounted) return;
-      setState(() {
-        _messages.add((isUser: false, text: reply));
-        _isBotTyping = false;
-      });
+      
+      // Add assistant reply to chat history
+      provider.addAssistantChatMessage(reply);
     } catch (_) {
       if (!mounted) return;
       final reply = _generateAiReply(text);
-      setState(() {
-        _messages.add((isUser: false, text: reply));
-        _isBotTyping = false;
-      });
+      provider.addAssistantChatMessage(reply);
     }
+
+    if (!mounted) return;
+    setState(() {
+      _isBotTyping = false;
+    });
 
     _scrollToBottom();
   }
@@ -146,15 +149,23 @@ class _AiChatAssistantScreenState extends State<AiChatAssistantScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<TrustShieldProvider>();
+    final chatHistory = provider.chatHistory;
+    final messages = chatHistory.isEmpty
+        ? [(isUser: false, text: 'Hi, I am TruthLens AI assistant. Ask me about scams.')]
+        : chatHistory
+            .map((item) => (isUser: item['role'] == 'user', text: item['content']!))
+            .toList();
+
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
             controller: _scrollController,
             padding: const EdgeInsets.all(12),
-            itemCount: _messages.length + (_isBotTyping ? 1 : 0),
+            itemCount: messages.length + (_isBotTyping ? 1 : 0),
             itemBuilder: (context, index) {
-              if (_isBotTyping && index == _messages.length) {
+              if (_isBotTyping && index == messages.length) {
                 return Align(
                   alignment: Alignment.centerLeft,
                   child: Container(
@@ -171,7 +182,7 @@ class _AiChatAssistantScreenState extends State<AiChatAssistantScreen> {
                   ),
                 );
               }
-              final msg = _messages[index];
+              final msg = messages[index];
               return Align(
                 alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(

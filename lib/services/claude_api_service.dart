@@ -52,11 +52,15 @@ class ClaudeApiService {
   // Store it in --dart-define or a secrets file.
   // NEVER commit a real key to version control.
   // ──────────────────────────────────────────────
-  static const String _apiKey =
-      String.fromEnvironment('ANTHROPIC_API_KEY', defaultValue: 'YOUR_API_KEY_HERE');
+  static const String _anthropicApiKey =
+      String.fromEnvironment('ANTHROPIC_API_KEY', defaultValue: '');
+  static const String _openAiApiKey =
+      String.fromEnvironment('OPENAI_API_KEY', defaultValue: '');
 
-  static const String _baseUrl = 'https://api.anthropic.com/v1/messages';
-  static const String _model = 'claude-haiku-4-5-20251001'; // free-tier friendly, fast
+  static const String _anthropicUrl = 'https://api.anthropic.com/v1/messages';
+  static const String _anthropicModel = 'claude-haiku-4-5-20251001';
+  static const String _openAiChatUrl = 'https://api.openai.com/v1/chat/completions';
+  static const String _openAiModel = 'gpt-3.5-turbo';
   static const int _maxTokens = 800;
 
   /// Analyzes whether an internship offer is real or fake using Claude AI.
@@ -72,14 +76,14 @@ class ClaudeApiService {
     try {
       final response = await http
           .post(
-            Uri.parse(_baseUrl),
+            Uri.parse(_anthropicUrl),
             headers: {
               'Content-Type': 'application/json',
-              'x-api-key': _apiKey,
+              'x-api-key': _anthropicApiKey,
               'anthropic-version': '2023-06-01',
             },
             body: jsonEncode({
-              'model': _model,
+              'model': _anthropicModel,
               'max_tokens': _maxTokens,
               'system': _systemPrompt,
               'messages': [
@@ -119,6 +123,14 @@ class ClaudeApiService {
     required List<Map<String, String>> conversationHistory,
     String language = 'english',
   }) async {
+    if (_openAiApiKey.isNotEmpty) {
+      return _chatWithOpenAi(
+        userMessage: userMessage,
+        conversationHistory: conversationHistory,
+        language: language,
+      );
+    }
+
     final messages = [
       ...conversationHistory.map(
         (m) => {'role': m['role']!, 'content': m['content']!},
@@ -129,14 +141,14 @@ class ClaudeApiService {
     try {
       final response = await http
           .post(
-            Uri.parse(_baseUrl),
+            Uri.parse(_anthropicUrl),
             headers: {
               'Content-Type': 'application/json',
-              'x-api-key': _apiKey,
+              'x-api-key': _anthropicApiKey,
               'anthropic-version': '2023-06-01',
             },
             body: jsonEncode({
-              'model': _model,
+              'model': _anthropicModel,
               'max_tokens': _maxTokens,
               'system': _chatSystemPrompt(language),
               'messages': messages,
@@ -155,6 +167,56 @@ class ClaudeApiService {
         return 'Rate limit reached. Please wait a few seconds and try again.';
       } else {
         return 'Claude AI is temporarily unavailable. Using local analysis instead.';
+      }
+    } catch (_) {
+      return 'Network error. Please check your connection and try again.';
+    }
+  }
+
+  Future<String> _chatWithOpenAi({
+    required String userMessage,
+    required List<Map<String, String>> conversationHistory,
+    required String language,
+  }) async {
+    final messages = <Map<String, String>>[
+      {'role': 'system', 'content': _chatSystemPrompt(language)},
+      ...conversationHistory.map(
+        (m) => {'role': m['role']!, 'content': m['content']!},
+      ),
+      {'role': 'user', 'content': userMessage},
+    ];
+
+    try {
+      final response = await http
+          .post(
+            Uri.parse(_openAiChatUrl),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $_openAiApiKey',
+            },
+            body: jsonEncode({
+              'model': _openAiModel,
+              'messages': messages,
+              'max_tokens': 300,
+              'temperature': 0.2,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final choices = body['choices'] as List<dynamic>?;
+        if (choices == null || choices.isEmpty) {
+          return 'AI did not return a valid response. Please try again.';
+        }
+        final message = (choices.first as Map<String, dynamic>)['message'] as Map<String, dynamic>?;
+        return (message?['content'] as String? ?? '').trim();
+      } else if (response.statusCode == 401) {
+        return 'OpenAI API key invalid or missing. Set OPENAI_API_KEY.';
+      } else if (response.statusCode == 429) {
+        return 'OpenAI rate limit reached. Please wait and try again.';
+      } else {
+        return 'OpenAI API error ${response.statusCode}. Please check your key and network.';
       }
     } catch (_) {
       return 'Network error. Please check your connection and try again.';

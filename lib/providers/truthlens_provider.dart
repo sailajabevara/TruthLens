@@ -114,6 +114,7 @@ class TrustShieldProvider extends ChangeNotifier {
   /// Send a chat message — uses Claude API for smarter replies
   Future<String> sendChatMessage(String userMessage) async {
     _chatHistory.add({'role': 'user', 'content': userMessage});
+    notifyListeners();
 
     final reply = await _claudeService.chatAnalyze(
       userMessage: userMessage,
@@ -130,6 +131,16 @@ class TrustShieldProvider extends ChangeNotifier {
 
   void clearChatHistory() {
     _chatHistory.clear();
+    notifyListeners();
+  }
+
+  void addAssistantChatMessage(String assistantText) {
+    _chatHistory.add({'role': 'assistant', 'content': assistantText});
+    notifyListeners();
+  }
+
+  void addUserChatMessage(String userText) {
+    _chatHistory.add({'role': 'user', 'content': userText});
     notifyListeners();
   }
 
