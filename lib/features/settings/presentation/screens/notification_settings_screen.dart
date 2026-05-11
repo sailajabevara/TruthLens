@@ -88,8 +88,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       onChanged: onChanged,
       title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       subtitle: Text(subtitle, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-      activeThumbColor: AppColors.primaryBlue,
-      activeTrackColor: AppColors.primaryBlue.withValues(alpha: 0.5),
+      thumbColor: WidgetStateProperty.all(AppColors.primaryBlue),
+      trackColor: WidgetStateProperty.all(AppColors.primaryBlue.withValues(alpha: 0.5)),
       contentPadding: EdgeInsets.zero,
     );
   }
