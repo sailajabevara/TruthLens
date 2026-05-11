@@ -10,10 +10,21 @@ app.use(express.json());
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const PORT = Number(process.env.PORT || 5000);
+
+if (!OPENROUTER_API_KEY) {
+  console.error("Missing OPENROUTER_API_KEY in environment variables.");
+  process.exit(1);
+}
 
 app.post("/chat", async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message } = req.body || {};
+    if (typeof message !== "string" || message.trim().length < 3) {
+      return res.status(400).json({
+        error: "Please provide a valid message with at least 3 characters.",
+      });
+    }
 
     const response = await axios.post(
       OPENROUTER_URL,
@@ -26,7 +37,7 @@ app.post("/chat", async (req, res) => {
           },
           {
             role: "user",
-            content: message
+            content: message.trim()
           }
         ]
       },
@@ -40,7 +51,12 @@ app.post("/chat", async (req, res) => {
       }
     );
 
-    const reply = response.data.choices[0].message.content;
+    const reply = response?.data?.choices?.[0]?.message?.content;
+    if (!reply || typeof reply !== "string") {
+      return res.status(502).json({
+        error: "AI service returned an unexpected response format.",
+      });
+    }
 
     res.json({
       reply: reply,
@@ -55,6 +71,6 @@ app.post("/chat", async (req, res) => {
   }
 });
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

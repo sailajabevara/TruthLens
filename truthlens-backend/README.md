@@ -10,7 +10,11 @@ Node.js backend for TruthLens AI, providing a `/chat` endpoint powered by OpenRo
    ```
 
 2. Configure environment variables:
-   Create a `.env` file (already provided) with your `OPENROUTER_API_KEY`.
+   Copy `.env.example` to `.env` and add your `OPENROUTER_API_KEY`.
+
+   ```bash
+   cp .env.example .env
+   ```
 
 3. Start the server:
    ```bash

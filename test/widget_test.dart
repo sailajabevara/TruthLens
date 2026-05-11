@@ -7,14 +7,14 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:task_slider/main.dart';
+import 'package:truthlens/main.dart';
 
 void main() {
-  testWidgets('TrustShield launches onboarding flow', (WidgetTester tester) async {
+  testWidgets('TruthLens launches onboarding flow', (WidgetTester tester) async {
     await tester.pumpWidget(const TrustShieldCore());
-    expect(find.text('TrustShield AI'), findsOneWidget);
+    expect(find.text('TruthLens AI'), findsOneWidget);
 
     await tester.pumpAndSettle(const Duration(seconds: 3));
-    expect(find.text('Welcome to TrustShield AI'), findsOneWidget);
+    expect(find.text('Welcome to TruthLens AI'), findsOneWidget);
   });
 }

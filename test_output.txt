@@ -1,0 +1,14 @@
+﻿00:00 +0: loading C:/Users/eswar/OneDrive/Desktop/project/TruthLens/test/ai_chat_test.dart
+00:00 +0: Test AI Chat Message
+Sending message...
+Reply received: Alright, let's put on our detective hats and take a closer look! To help me sniff out any fishy business, could you share some details about the job offer? Things like:
+
+*   **How did you find the job posting?** (e.g., social media, job board, email)
+*   **What company is it with?** 
+*   **What does the job description say?**
+*   **Does it sound too good to be true?** (High pay, little effort?)
+
+Don't worry, I've got a nose for scams, and together we'll figure this out! ≡ƒÿë
+
+**Pro-Tip:** Be wary of job offers that require you to pay upfront for training or equipment. Legitimate employers usually cover these costs!
+00:02 +1: All tests passed!

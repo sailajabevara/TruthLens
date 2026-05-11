@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:task_slider/firebase_options.dart';
-import 'package:task_slider/providers/truthlens_provider.dart';
-import 'package:task_slider/screens/splash_screen.dart';
+import 'package:truthlens/firebase_options.dart';
+import 'package:truthlens/core/state/truthlens_provider.dart';
+import 'package:truthlens/features/dashboard/presentation/screens/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
