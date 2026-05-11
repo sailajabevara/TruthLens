@@ -1,88 +1,185 @@
-# TruthLens: AI-Powered Cybersecurity & Threat Intelligence Platform
+# TruthLens
 
-## Executive Overview
-TruthLens is an enterprise-grade, real-time threat intelligence and fraud detection platform. Engineered to intercept and neutralize sophisticated digital threats—including programmatic phishing, credential harvesting, Domain Generation Algorithm (DGA) deployments, and highly targeted employment fraud—TruthLens leverages a hybrid heuristic orchestration model and multi-layered AI analysis to protect end-users at the edge.
+TruthLens is a cross-platform Flutter application for scam detection, fake news analysis, and conversational threat intelligence.
 
-Our mission is to democratize cybersecurity by delivering computational risk modeling and Explainable AI (XAI) directly to the mobile attack surface, ensuring decisions are data-driven, mathematically rigorous, and instantaneously actionable.
+It combines:
+- Firebase authentication (email/password + Google sign-in)
+- on-device text, URL, news, and document analysis
+- OCR and PDF text extraction
+- AI chat assistance with scam and job-verification guidance
+- scan history, analytics, and profile settings
 
-## 1. System Architecture & Modular Threat Intelligence
-The TruthLens ecosystem is built on a scalable, event-driven architecture designed to process high-velocity unstructured data streams (URLs, SMS, documents, OCR extractions). The core consists of loosely coupled, highly cohesive subsystems adhering strictly to SOLID principles and Clean Architecture design patterns.
+## App Features
 
-- **Edge Client (Flutter):** A performant, cross-platform client executing asynchronous state management and offloading complex computational tasks via non-blocking isolates.
-- **Failover Analysis Pipeline:** To guarantee zero-downtime protection, TruthLens implements a resilient failover protocol. Primary threat analysis is orchestrated via an advanced LLM (OpenRouter/Claude), followed by a deterministic, offline-capable Modular Heuristic Engine that activates instantly upon network degradation.
-- **Microservices Backend (Node.js/Express):** A stateless API layer facilitating scalable AI integrations, maintaining secure context windows, and executing rate-limited conversational threat analysis.
+- **Authentication**
+  - Firebase email/password login
+  - Signup with full name, email, and password
+  - Google sign-in
+  - password reset and logout flow
 
-## 2. The Core Intelligence Engine
-The TruthLens Intelligence Engine departs from legacy boolean rule sets, employing an **Asynchronous Analyzer Pipeline** to conduct distributed risk evaluation.
+- **Dashboard**
+  - Personalized greeting and safety score
+  - Quick scan tiles for URL, message, document, and news analysis
+  - Recent scan snapshot and scam/safe summary
+  - Safety tips and quick search input
 
-### Asynchronous Analyzer Pipeline
-Incoming payloads are broadcast to specialized `AnalyzerModule` instances running concurrently. This map-reduce execution strategy prevents isolate blocking while performing computationally expensive evaluations.
+- **Threat Intelligence Analyzer**
+  - text input analysis for message, URL, news, and document scans
+  - PDF, TXT, MD, CSV, JSON file upload
+  - mobile camera/gallery OCR support for image extraction
+  - trust score, risk assessment, and explanation output
 
-- **UrlThreatAnalyzer:** Conducts deep protocol validation, typo-squatting distance analysis, and cross-references unsafe TLDs statistically overrepresented in scam infrastructure.
-- **EntropyAnalyzer:** Employs Shannon Entropy calculations on core domains to identify programmatic DGA (Domain Generation Algorithm) characteristics. Highly randomized domains (Entropy > 3.8) are immediately flagged as disposable scam infrastructure.
-- **NlpScamAnalyzer:** Utilizes word-boundary regex and semantic manipulation detection to identify artificial urgency, financial extortion patterns, and illegitimate employment routing.
+- **AI Chat Assistant**
+  - interactive chat UI for scam advice
+  - Telugu/English prompts support
+  - chat history and clear chat action
 
-### Computational Risk Modeling & Asymptotic Decay
-Risk aggregation utilizes an advanced decay algorithm rather than linear subtraction. 
-`Trust = Base * e^(-k * totalPenalty)`
-This prevents mathematical overflow during compounding threat signals, ensuring that multiple high-risk indicators push the final trust score asymptotically toward zero without breaking constraints.
+- **History & Analytics**
+  - scan history list with filters for links, messages, documents, and news
+  - risk summary cards (high, medium, safe)
+  - tap history item to view detailed result
 
-### Explainable AI (XAI) Engine
-A core innovation of TruthLens is its Explainability Engine. Security alerts are useless without context. The XAI module converts weighted severity signatures into precise, human-readable intelligence reports, detailing specific **Evidence** and actionable **Mitigations**, sorted by critical threat priority.
+- **Profile & Settings**
+  - user profile screen with account stats
+  - dark/light theme toggle
+  - navigation to personal info, security, notifications, privacy, help, and about screens
 
-## 3. Threat Intelligence Workflow
-1. **Ingestion & Sanitization:** Multi-modal data (text, URLs, extracted OCR documents) is ingested and normalized.
-2. **Primary Neural Evaluation:** Payload is securely transmitted to the cloud-based AI classifier for deep semantic contextualization and intent recognition.
-3. **Secondary Heuristic Orchestration (Failover/Augmentation):** Concurrently, the offline Intelligence Engine calculates Shannon Entropy, evaluates URL entropy, and matches strict structural signatures.
-4. **Threat Signal Aggregation:** Signals from both engines are deduplicated, normalized, and weighted based on their confidence intervals.
-5. **Actionable Output:** The XAI Engine renders the aggregated signals into an `IntelligenceReport`, blocking malicious intent before user engagement.
+## Project Structure
 
-## 4. Scalability & Performance Optimization
-- **Concurrent Execution:** Analyzers utilize `Future.wait` to execute heuristic calculations in parallel, ensuring sub-100ms response times on the edge.
-- **Stateless Backend:** The Node.js proxy layer is entirely stateless, allowing horizontal scaling via Kubernetes or serverless container environments.
-- **Dependency Injection:** The `FraudIntelligenceEngine` is completely decoupled from its underlying analyzers. Scaling the rule set involves injecting new modules (e.g., ImageHashAnalyzer, SmsReputationAnalyzer) without modifying the orchestration logic.
+```
+lib/
+  core/
+    state/truthlens_provider.dart
+  features/
+    auth/
+      data/
+      presentation/
+        screens/
+          login_screen.dart
+          onboarding_screen.dart
+    chat/
+      presentation/
+        screens/
+          ai_chat_assistant_screen.dart
+    dashboard/
+      presentation/
+        screens/
+          dashboard_screen.dart
+          home_screen.dart
+          splash_screen.dart
+    history/
+      presentation/
+        screens/
+          history_screen.dart
+    settings/
+      presentation/
+        screens/
+          profile_screen.dart
+          personal_info_screen.dart
+          security_settings_screen.dart
+          notification_settings_screen.dart
+          privacy_policy_screen.dart
+          help_center_screen.dart
+          community_guidelines_screen.dart
+          about_truthlens_screen.dart
+    threat_intelligence/
+      domain/
+      presentation/
+        screens/
+          analyzer_screen.dart
+          analytics_screen.dart
+          result_screen.dart
 
-## 5. Security Engineering & Data Privacy
-- **Zero-Trust Input Validation:** All inputs are heavily sanitized before evaluation to prevent injection attacks against the heuristic engine.
-- **Forbidden Header Omission:** API integrations strip CORS-triggering headers (e.g., `HTTP-Referer`) for secure, seamless cross-origin web execution.
-- **Ephemeral State:** The conversational AI context window is aggressively pruned (limited to 10 nodes) to prevent memory leaks and contextual poisoning.
+truthlens-backend/
+  package.json
+  server.js
 
-## 6. Strategic Roadmap: Scaling Threat Intelligence
+android/, ios/, linux/, macos/, windows/, web/
 
-The TruthLens development trajectory is focused on transitioning from edge-based detection to a global, interconnected cybersecurity ecosystem. Our roadmap is divided into three strategic phases designed for venture-scale expansion and enterprise-grade resilience.
+pubspec.yaml
+README.md
 
-### Phase I: Advanced Behavioral Analysis & OSINT Enrichment (Q3 2026)
-*   **Behavioral Anomaly Detection:** Implementation of zero-trust behavioral modeling to detect subtle social engineering patterns that bypass static heuristic filters.
-*   **OSINT Enrichment Pipeline:** Integration of Open-Source Intelligence (OSINT) feeds to cross-reference reported entities against global databases of known threat actors and malicious infrastructure.
-*   **Multilingual NLP Expansion:** Scaling the NLPScamAnalyzer to support 15+ regional languages using localized transformer models for nuanced threat detection in non-English communications.
+```
 
-### Phase II: Scam Graph Analytics & Federated Intelligence (Q4 2026)
-*   **Scam Graph Analysis:** Deployment of a graph-based database (Neo4j/ArangoDB) to map relationships between disparate scam reports. This identifies organized fraud rings by correlating shared UPI IDs, phone numbers, and domain infrastructure.
-*   **Federated Learning Infrastructure:** Transitioning to a privacy-preserving Federated Learning model where threat intelligence is refined on-device and synchronized across the network without exposing sensitive user data.
-*   **Distributed Threat Synchronization:** Real-time, peer-to-peer synchronization of high-confidence threat signatures to ensure edge clients remain protected even in air-gapped or low-connectivity environments.
+## Dependencies
 
-### Phase III: Enterprise Ecosystem & SIEM Integration (2027)
-*   **SIEM/SOC Dashboard Integration:** Exposing standardized REST APIs and webhooks for seamless integration into enterprise Security Information and Event Management (SIEM) systems and Security Operations Centers (SOC).
-*   **Adaptive Phishing Detection:** Implementation of reinforcement learning pipelines that retrain models in real-time based on successful "near-miss" interceptions, ensuring the engine stays ahead of evolving adversarial tactics.
-*   **Enterprise Admin Console & Risk Telemetry:** A centralized dashboard for organizational security officers to monitor real-time risk telemetry across distributed employee endpoints, facilitating rapid incident response.
-*   **Cross-Platform Extension Ecosystem:** Deployment of browser extensions and OS-level hooks to provide a unified threat-detection layer across all user entry points (Web, Desktop, and Mobile).
+Key packages used by the Flutter app:
+
+- `provider`
+- `firebase_core`, `firebase_auth`
+- `google_sign_in`
+- `device_preview`
+- `file_picker`, `image_picker`
+- `google_mlkit_text_recognition`
+- `syncfusion_flutter_pdf`
+- `read_pdf_text`
+- `http`
+
+## Backend Server
+
+The `truthlens-backend` folder contains a small Node.js Express proxy for AI chat.
+It sends `/chat` requests to OpenRouter using `google/gemini-2.0-flash-001`.
+
+### Backend run steps
+
+```bash
+cd truthlens-backend
+npm install
+set OPENROUTER_API_KEY=your_api_key
+node server.js
+```
+
+## Run the App Locally
+
+From the repository root:
+
+```bash
+flutter pub get
+flutter run
+```
+
+If you need a specific platform, run:
+
+```bash
+flutter run -d windows
+flutter run -d chrome
+flutter run -d <device_id>
+```
+
+## Run with Docker
+
+This repo is mainly a Flutter app. Local Flutter run is the recommended path.
+
+If you still want to build the container:
+
+```bash
+docker build -t truthlens-app .
+docker run --rm -it -p 8080:8080 truthlens-app
+```
+
+## Git Push
+
+```bash
+git status
+git add .
+git commit -m "Your commit message"
+git push origin main
+```
+
+For a new branch:
+
+```bash
+git push -u origin <branch-name>
+```
+
+## Notes
+
+- The app initializes Firebase in `lib/main.dart`.
+- The home flow starts at `SplashScreen` and then navigates to `HomeScreen`.
+- `TrustShieldProvider` contains app state, analysis methods, chat history, themes, and scan history.
+- `AnalyzerScreen` supports both uploaded files and manual input.
+- `HistoryScreen` shows saved scan records and risk categories.
 
 ---
 
-*TruthLens: Engineering a fraud-free digital future through computational rigor and venture-scale intelligence.*
-
-## Quick Start (Development Environment)
-
-```bash
-# Clone the repository
-git clone <repository_url>
-cd TruthLens
-
-# Retrieve dependencies
-flutter pub get
-
-# Execute with injected Cloud Intelligence Key
-flutter run --dart-define=OPENROUTER_API_KEY=<ENTERPRISE_KEY>
-```
-
-*TruthLens: Computational rigor meets actionable intelligence.*
+TruthLens is built to help detect scams, fake jobs, suspicious URLs, and misleading content using a unified Flutter experience.
