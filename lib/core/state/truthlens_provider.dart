@@ -134,10 +134,7 @@ class TrustShieldProvider extends ChangeNotifier {
     } catch (backendError) {
       debugPrint('Backend call failed: $backendError.');
       // If both fail, throw the more descriptive error (usually the first one)
-      if (firstError != null) {
-        throw firstError;
-      }
-      rethrow;
+      throw firstError;
     }
   }
 

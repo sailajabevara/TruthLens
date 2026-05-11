@@ -72,12 +72,12 @@ class _HomeScreenState extends State<HomeScreen> {
           NavigationDestination(
             icon: Icon(Icons.security_outlined, color: isDarkMode ? Colors.white70 : Colors.black54),
             selectedIcon: const Icon(Icons.security, color: _kAccent2),
-            label: 'Report',
+            label: 'Analytics',
           ),
           NavigationDestination(
             icon: Icon(Icons.notifications_none, color: isDarkMode ? Colors.white70 : Colors.black54),
             selectedIcon: const Icon(Icons.notifications, color: _kAccent2),
-            label: 'Alerts',
+            label: 'History',
           ),
           NavigationDestination(
             icon: Icon(Icons.people_outline, color: isDarkMode ? Colors.white70 : Colors.black54),

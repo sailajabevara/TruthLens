@@ -335,65 +335,92 @@ class ProfileScreen extends StatelessWidget {
                       // Logout Button
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            final shouldLogout = await showDialog<bool>(
-                              context: context,
-                              builder: (dialogContext) {
-                                return AlertDialog(
-                                  title: const Text('Logout'),
-                                  content: const Text('Do you want to logout now?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(dialogContext).pop(false),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    FilledButton(
-                                      onPressed: () => Navigator.of(dialogContext).pop(true),
-                                      child: const Text('Logout'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-            
-                            if (shouldLogout != true) return;
-            
-                            final authService = FirebaseAuthService();
-                            final response = await authService.logout();
-                            if (!context.mounted) return;
-                            
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(response.message)),
-                            );
-                            if (!response.success) return;
-                            
-                            Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
-                              (route) => false,
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.redAccent.shade400,
-                            side: BorderSide(color: Colors.redAccent.shade400, width: 1.5),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(18),
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.redAccent.shade400,
+                                Colors.red.shade700,
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.logout, size: 22),
-                              SizedBox(width: 8),
-                              Text(
-                                'Log Out',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.redAccent.shade400.withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
                               ),
                             ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () async {
+                                final shouldLogout = await showDialog<bool>(
+                                  context: context,
+                                  builder: (dialogContext) {
+                                    return AlertDialog(
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                      title: const Text('Logout'),
+                                      content: const Text('Do you want to logout now?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(dialogContext).pop(false),
+                                          child: Text('Cancel', style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54)),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => Navigator.of(dialogContext).pop(true),
+                                          child: const Text('Logout', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+            
+                                if (shouldLogout != true) return;
+            
+                                final authService = FirebaseAuthService();
+                                final response = await authService.logout();
+                                if (!context.mounted) return;
+                                
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(response.message),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                );
+                                if (!response.success) return;
+                                
+                                Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+                                  (route) => false,
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(18),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Icon(Icons.logout_rounded, color: Colors.white, size: 22),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      'Log Out',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.8,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),

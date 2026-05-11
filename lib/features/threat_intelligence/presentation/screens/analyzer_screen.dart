@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:read_pdf_text/read_pdf_text.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:truthlens/features/threat_intelligence/domain/entities/scam_report.dart';
 import 'package:truthlens/core/state/truthlens_provider.dart';
 import 'package:truthlens/features/threat_intelligence/presentation/screens/result_screen.dart';
@@ -44,16 +47,23 @@ class _AnalyzerScreenState extends State<AnalyzerScreen> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: const ['txt', 'md', 'csv', 'json'],
+        allowedExtensions: const ['pdf', 'txt', 'md', 'csv', 'json'],
       );
       if (!mounted || result == null || result.files.isEmpty) {
         return;
       }
       final file = result.files.single;
+      
+      setState(() => _isExtracting = true);
+      
       final extractedText = await _readPickedFile(file);
+      
       if (!mounted) {
         return;
       }
+      
+      setState(() => _isExtracting = false);
+
       if (extractedText == null || extractedText.trim().isEmpty) {
         _showSnack('Unable to read this file. Try another format.');
         return;
@@ -64,8 +74,11 @@ class _AnalyzerScreenState extends State<AnalyzerScreen> {
         _controller.text = extractedText;
       });
       _showSnack('Document text loaded for analysis.');
-    } catch (_) {
-      _showSnack('Document upload failed. Please retry.');
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isExtracting = false);
+        _showSnack('Document upload failed: ${e.toString()}');
+      }
     }
   }
 
@@ -122,20 +135,99 @@ class _AnalyzerScreenState extends State<AnalyzerScreen> {
   }
 
   Future<String?> _readPickedFile(PlatformFile file) async {
-    if (file.bytes != null) {
-      return String.fromCharCodes(file.bytes!);
-    }
-    if (kIsWeb) {
+    final fileName = file.name;
+    final filePath = file.path;
+    final fileBytes = file.bytes;
+    
+    debugPrint('--- PDF DEBUG START ---');
+    debugPrint('File Name: $fileName');
+    debugPrint('File Path: $filePath');
+    debugPrint('Bytes available: ${fileBytes != null ? fileBytes.length : "NULL"}');
+
+    try {
+      final isPdf = fileName.toLowerCase().endsWith('.pdf');
+      
+      if (isPdf) {
+        String? extractedText;
+
+        // Stage 1: Try read_pdf_text (best for mobile)
+        if (filePath != null && filePath.isNotEmpty) {
+          try {
+            debugPrint('Stage 1: Attempting read_pdf_text with path...');
+            extractedText = await ReadPdfText.getPDFtext(filePath);
+            if (extractedText.trim().isNotEmpty) {
+              debugPrint('Stage 1 Success: Extracted ${extractedText.length} chars');
+              return extractedText;
+            }
+            debugPrint('Stage 1: read_pdf_text returned empty string.');
+          } catch (e) {
+            debugPrint('Stage 1 Error (read_pdf_text): $e');
+          }
+        }
+
+        // Stage 2: Try Syncfusion (best fallback or for memory-only files)
+        try {
+          debugPrint('Stage 2: Attempting Syncfusion extraction...');
+          Uint8List? bytes = fileBytes;
+          if (bytes == null && filePath != null) {
+            final f = File(filePath);
+            if (await f.exists()) {
+              bytes = await f.readAsBytes();
+              debugPrint('Stage 2: Read ${bytes.length} bytes from file system.');
+            }
+          }
+
+          if (bytes != null && bytes.isNotEmpty) {
+            final PdfDocument document = PdfDocument(inputBytes: bytes);
+            extractedText = PdfTextExtractor(document).extractText();
+            document.dispose();
+            
+            if (extractedText.trim().isNotEmpty) {
+              debugPrint('Stage 2 Success: Extracted ${extractedText.length} chars');
+              return extractedText;
+            }
+            debugPrint('Stage 2: Syncfusion returned empty string.');
+          } else {
+            debugPrint('Stage 2: No bytes available for Syncfusion.');
+          }
+        } catch (e) {
+          debugPrint('Stage 2 Error (Syncfusion): $e');
+        }
+
+        debugPrint('--- PDF DEBUG: ALL STAGES FAILED ---');
+        return null;
+      }
+
+      // Handle plain text files (Stages for non-PDF)
+      debugPrint('Processing as plain text file...');
+      Uint8List? textBytes = fileBytes;
+      if (textBytes == null && filePath != null) {
+        final f = File(filePath);
+        if (await f.exists()) {
+          textBytes = await f.readAsBytes();
+        }
+      }
+
+      if (textBytes != null) {
+        try {
+          final decoded = utf8.decode(textBytes);
+          debugPrint('Plain text decoded via UTF-8: ${decoded.length} chars');
+          return decoded;
+        } catch (e) {
+          debugPrint('UTF-8 decode failed, using char codes: $e');
+          return String.fromCharCodes(textBytes);
+        }
+      }
+      
+      debugPrint('No text bytes found for non-PDF file.');
       return null;
-    }
-    if (file.path == null) {
+    } catch (e, stack) {
+      debugPrint('Critical Error in _readPickedFile: $e');
+      debugPrint('Stack trace: $stack');
       return null;
+    } finally {
+      debugPrint('--- PDF DEBUG END ---');
     }
-    final f = File(file.path!);
-    if (!await f.exists()) {
-      return null;
-    }
-    return f.readAsString();
   }
 
   void _showSnack(String message) {
@@ -160,7 +252,7 @@ class _AnalyzerScreenState extends State<AnalyzerScreen> {
                   leading: const Icon(Icons.description_outlined, color: Colors.white),
                   title: const Text('Upload Document', style: TextStyle(color: Colors.white)),
                   subtitle: const Text(
-                    'Supported: txt, md, csv, json',
+                    'Supported: PDF, txt, md, csv, json',
                     style: TextStyle(color: Colors.white70),
                   ),
                   onTap: () {

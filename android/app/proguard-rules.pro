@@ -4,3 +4,4 @@
 -keep class com.google.mlkit.vision.text.korean.** { *; }
 -keep class com.google.mlkit.vision.text.latin.** { *; }
 -dontwarn com.google.mlkit.vision.text.**
+-dontwarn com.gemalto.jp2.JP2Decoder

@@ -1,6 +1,6 @@
 {
-    "name": "task_slider",
-    "short_name": "task_slider",
+    "name": "TruthLens",
+    "short_name": "TruthLens",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
